@@ -1,5 +1,5 @@
 {
-    "name": "kota-shade/yii-doctrine-rbac",
+    "name": "kota-shade/yii2-doctrine-rbac",
     "description": "Yii 2 rbac to work with Doctrine 2.",
     "keywords": ["yii","doctrine", "rbac"],
     "homepage": "",
