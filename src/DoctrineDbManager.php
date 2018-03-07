@@ -21,12 +21,13 @@ use yii\rbac\Role;
 use yii\rbac\Rule;
 use yii\base\InvalidArgumentException;
 use yii\base\InvalidCallException;
+use Doctrine\ORM\EntityManager;
 
 abstract class DoctrineDbManager extends Component implements ManagerInterface
 {
 
     public $dbResourceName = 'doctrine';
-    /** @var \Doctrine\ORM\EntityManager */
+    /** @var EntityManager */
     protected $em;
 
     public function init()
@@ -35,6 +36,7 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
         /** @var \KotaShade\doctrine\components\DoctrineComponent $doctrine */
         $doctrine = Yii::$app->get($this->dbResourceName);
         $em = $doctrine->getEntityManager();
+        $this->setEntityManager($em);
     }
 
     public function createRole($name)
@@ -54,17 +56,10 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
     public function add($object)
     {
         if ($object instanceof EntityNS\AuthItem) {
-            if ($object->getRuleName() && $this->getRule($object->ruleName) === null) {
-                $rule = \Yii::createObject($object->ruleName);
-                $rule->name = $object->ruleName;
-                $this->addRule($rule);
-            }
-
-            return $this->addItem($object);
+            $this->getEntityManager()->persist($object);
         } elseif ($object instanceof Rule) {
-            return $this->addRule($object);
+            $this->getEntityManager()->persist($object);
         }
-
         throw new InvalidArgumentException('Adding unsupported object type.');
     }
 
@@ -121,7 +116,7 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
     public function getRule($name)
     {
         /** @var EntityNS\AuthRule $ruleE */
-        if (($ruleE = $this->em->find(EntityNS\AuthRule::class, $name)) == null) {
+        if (($ruleE = $this->getEntityManager()->find(EntityNS\AuthRule::class, $name)) == null) {
             return null;
         }
 
@@ -135,7 +130,7 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
      */
     public function getRules()
     {
-        $repo = $this->em->getRepository(EntityNS\AuthRule::class);
+        $repo = $this->getEntityManager()->getRepository(EntityNS\AuthRule::class);
         $res = $repo->findAll();
 
         $rules = [];
@@ -185,18 +180,18 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
         $aicE = new EntityNS\AuthItemChild();
         $aicE->setChild($child);
         $aicE->setParent($parent);
-        $this->em->persist($aicE);
+        $this->getEntityManager()->persist($aicE);
 
         return true;
     }
 
     public function removeChild($parent, $child)
     {
-        $repo = $this->em->getRepository(EntityNS\AuthItemChild::class);
+        $repo = $this->getEntityManager()->getRepository(EntityNS\AuthItemChild::class);
         $list = $repo->findBy(['parent' => $parent, 'child' => $child]);
         /** @var EntityNS\AuthItemChild $aicE */
         foreach($list as $aicE) {
-            $this->em->remove($aicE);
+            $this->getEntityManager()->remove($aicE);
         }
 
         return true;
@@ -204,11 +199,11 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
 
     public function removeChildren($parent)
     {
-        $repo = $this->em->getRepository(EntityNS\AuthItemChild::class);
+        $repo = $this->getEntityManager()->getRepository(EntityNS\AuthItemChild::class);
         $list = $repo->findBy(['parent' => $parent]);
         /** @var EntityNS\AuthItemChild $aicE */
         foreach($list as $aicE) {
-            $this->em->remove($aicE);
+            $this->getEntityManager()->remove($aicE);
         }
         return true;
     }
@@ -220,7 +215,7 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
      */
     public function hasChild($parentE, $childE)
     {
-        $repo = $this->em->getRepository(EntityNS\AuthItemChild::class);
+        $repo = $this->getEntityManager()->getRepository(EntityNS\AuthItemChild::class);
         $list = $repo->findBy(['parent' => $parentE, 'child' => $childE]);
         return (count($list) > 0);
     }
@@ -228,7 +223,7 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
     public function getChildren($name)
     {
         /** @var EntityNS\AuthItem $itemE */
-        $itemE = $this->em->find(EntityNS\AuthItem::class, $name);
+        $itemE = $this->getEntityManager()->find(EntityNS\AuthItem::class, $name);
         $list = $itemE->getChildren();
         /** @var EntityNS\AuthItemChild $aicE */
         foreach($list as $aicE) {
@@ -298,5 +293,40 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
         //FIXME не реализовано
         return $this->checkAccessRecursive($userId, $permissionName, $params, $assignments);
     }
+
+    /**
+     * @return string
+     */
+    public function getDbResourceName(): string
+    {
+        return $this->dbResourceName;
+    }
+
+    /**
+     * @param string $dbResourceName
+     */
+    public function setDbResourceName(string $dbResourceName): void
+    {
+        $this->dbResourceName = $dbResourceName;
+    }
+
+    /**
+     * @return EntityManager
+     */
+    public function getEntityManager()
+    {
+        return $this->em;
+    }
+
+    /**
+     * @param EntityManager $em
+     * @return self
+     */
+    public function setEntityManager(EntityManager $em)
+    {
+        $this->em = $em;
+        return $this;
+    }
+
 
 }

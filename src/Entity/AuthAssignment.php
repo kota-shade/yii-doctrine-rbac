@@ -13,14 +13,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 /**
  * NB!!! Extend class and define $userproperty - relation to user entity
  *
+ * table auth_assignment
  * Class AuthAssignment
  * @package KotaShade\DoctrineRbac\Entity
- * @ORM\Table(name="auth_assignment",  indexes={
- *      },
- *      uniqueConstraints={
- *      }
- * )
- * @ORM\Entity()
+ *
+ * @ORM\MappedSuperclass
  */
 abstract class AuthAssignment
 {
@@ -28,14 +25,14 @@ abstract class AuthAssignment
      * @var AuthItem
      * @ORM\Id
      *
-     * @ORM\ManyToOne(targetEntity="AuthItem")
+     * @ORM\ManyToOne(targetEntity="KotaShade\DoctrineRbac\Entity\AuthItem")
      * @ORM\JoinColumn(name="item_name", referencedColumnName="name", nullable=false)
      */
     protected $itemName;
 
     /**
      * @var integer
-     * @ORM\Column(name="create_at", type="integer", nullable=true)
+     * @ORM\Column(name="created_at", type="integer", nullable=true)
      */
     protected $createdAt;
 
