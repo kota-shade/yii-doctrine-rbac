@@ -39,7 +39,7 @@ abstract class AuthItem
 
     /**
      * @var string
-     * @ORM\Column(name="description", type="text", nullable=false)
+     * @ORM\Column(name="description", type="text", nullable=true)
      */
     protected $description;
 
@@ -52,7 +52,7 @@ abstract class AuthItem
 
     /**
      * @var string
-     * @ORM\Column(name="data", type="string", nullable=false)
+     * @ORM\Column(name="data", type="string", nullable=true)
      */
     protected $data;
 
@@ -89,10 +89,12 @@ abstract class AuthItem
 
     /**
      * @param string $name
+     * @return self
      */
-    public function setName(string $name): void
+    public function setName(string $name)
     {
         $this->name = $name;
+        return $this;
     }
 
     /**
@@ -153,10 +155,12 @@ abstract class AuthItem
 
     /**
      * @param int $createdAt
+     * @return self
      */
-    public function setCreatedAt(int $createdAt): void
+    public function setCreatedAt(int $createdAt)
     {
         $this->createdAt = $createdAt;
+        return $this;
     }
 
     /**
@@ -206,5 +210,13 @@ abstract class AuthItem
     {
         $this->parents = $parents;
     }
+
+    public function __toString()
+    {
+        return sprintf("%s : name=%s\n", get_class($this), $this->getName());
+
+        // TODO: Implement __toString() method.
+    }
+
 
 }

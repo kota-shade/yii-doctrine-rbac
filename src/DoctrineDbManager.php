@@ -30,6 +30,8 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
     /** @var EntityManager */
     protected $em;
 
+    protected $itemRepo;
+
     public function init()
     {
         parent::init();
@@ -290,8 +292,70 @@ abstract class DoctrineDbManager extends Component implements ManagerInterface
         if (count($assignments) == 0) {
             return false;
         }
+
+        $itemRepo = $this->getItemRepo();
+        if (($itemE = $itemRepo->find($permissionName)) == null) {
+            return false;
+        }
+        /** @var \common\components\AuthUserComponent $authUser */
+        $authUser = Yii::$app->get('user');
+        $identityModel = $authUser->getIdentity();
+        $identityE = $identityModel->getIdentityEntity();
+
+        return $this->checkAccessRecursive($identityE, $itemE, $params, $assignments);
+    }
+
+    public function checkAccessRecursive($identityE, EntityNS\AuthItem $itemE, $params, $assignments)
+    {
+
+        Yii::debug(($itemE instanceof EntityNS\AuthItemRole ? "Checking role: ".$itemE->getName()
+            : "Checking permission: " . $itemE->getName()) .", __METHOD__");
+
+        if (!$this->executeRule($identityE, $itemE, $params)) {
+            return false;
+        }
+
+        $itemName = $itemE->getName();
+
+        if (isset($assignments[$itemName])) {
+            return true;
+        }
+
+        $parentList = $itemE->getParents();
+        /** @var EntityNS\AuthItemChild $aicE */
+        foreach ($parentList as $aicE) {
+            $parentItemE = $aicE->getParent();
+            if ($this->checkAccessRecursive($identityE, $parentItemE, $params, $assignments)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param $identityE
+     * @param $item
+     * @param $params
+     * @return bool
+     */
+    private function executeRule($identityE, $itemE, $params)
+    {
         //FIXME не реализовано
-        return $this->checkAccessRecursive($userId, $permissionName, $params, $assignments);
+        return true;
+    }
+
+    /**
+     * Возвращает репозиторий AuthItem энтити
+     * @return \Doctrine\ORM\EntityRepository
+     */
+    protected function getItemRepo()
+    {
+        if ($this->itemRepo == null) {
+            $em = $this->getEntityManager();
+            $this->itemRepo = $em->getRepository(EntityNS\AuthItem::class);
+        }
+        return $this->itemRepo;
     }
 
     /**

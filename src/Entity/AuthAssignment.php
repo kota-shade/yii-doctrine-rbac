@@ -55,10 +55,12 @@ abstract class AuthAssignment
 
     /**
      * @param AuthItem $itemName
+     * @return self
      */
-    public function setItemName(AuthItem $itemName): void
+    public function setItemName(AuthItem $itemName)
     {
         $this->itemName = $itemName;
+        return $this;
     }
 
     /**

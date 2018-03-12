@@ -52,10 +52,12 @@ class AuthItemChild
 
     /**
      * @param AuthItem $parent
+     * @return self
      */
-    public function setParent(AuthItem $parent): void
+    public function setParent(AuthItem $parent)
     {
         $this->parent = $parent;
+        return $this;
     }
 
     /**
